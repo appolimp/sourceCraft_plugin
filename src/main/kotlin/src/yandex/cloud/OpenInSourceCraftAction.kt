@@ -22,25 +22,31 @@ class OpenInSourceCraftAction : AnAction() {
             return
         }
 
+        val (startLine, endLine) = getSelectedLines(editor)
+
         val githubRepoUrl = "https://github.com/username/repository" // URL репозитория GitHub
         val projectBasePath = project.basePath ?: return
         val filePath = file.path.replace(projectBasePath, "")
 
-        // Определяем строку (или используем строку, на которой стоит курсор)
-        val selectionModel: SelectionModel = editor.selectionModel
-        val line = if (selectionModel.hasSelection()) {
-            editor.offsetToLogicalPosition(selectionModel.selectionStart).line
-        } else {
-            editor.caretModel.logicalPosition.line
-        }
-
         // Формируем URL с номером строки
-        val githubUrl = "$githubRepoUrl/blob/main$filePath#L${line + 1}"
+        val githubUrl = "$githubRepoUrl/blob/main$filePath#L${startLine + 1}"
 
         try {
             Desktop.getDesktop().browse(URI(githubUrl))
         } catch (e: Exception) {
             Messages.showErrorDialog("Could not open GitHub URL", "Error")
+        }
+    }
+
+    private fun getSelectedLines(editor: Editor): Pair<Int, Int> {
+        val selectionModel = editor.selectionModel
+        return if (selectionModel.hasSelection()) {
+            val startLine = editor.offsetToLogicalPosition(selectionModel.selectionStart).line
+            val endLine = editor.offsetToLogicalPosition(selectionModel.selectionEnd).line
+            Pair(startLine, endLine)
+        } else {
+            val currentLine = editor.caretModel.logicalPosition.line
+            Pair(currentLine, currentLine)
         }
     }
 }
