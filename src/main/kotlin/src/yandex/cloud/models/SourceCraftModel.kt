@@ -80,11 +80,11 @@ class SourceCraftModel(e: AnActionEvent) {
 
         val selectionModel = editor.selectionModel
         return if (selectionModel.hasSelection()) {
-            val startLine = editor.offsetToLogicalPosition(selectionModel.selectionStart).line
-            val endLine = editor.offsetToLogicalPosition(selectionModel.selectionEnd).line
+            val startLine = editor.offsetToLogicalPosition(selectionModel.selectionStart).line + 1
+            val endLine = editor.offsetToLogicalPosition(selectionModel.selectionEnd).line + 1
             Pair(startLine, endLine)
         } else {
-            val currentLine = editor.caretModel.logicalPosition.line
+            val currentLine = editor.caretModel.logicalPosition.line + 1
             Pair(currentLine, null)
         }
     }
