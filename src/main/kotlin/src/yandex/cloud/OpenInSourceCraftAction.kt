@@ -66,7 +66,7 @@ class OpenInSourceCraftAction : AnAction() {
                 }
 
                 env == "cloud-preprod" && subdomain.isNotEmpty() -> {  // stand
-                    "https://$subdomain.o.ui.yandex.ru/repo/browse/$user/$repo"
+                    "https://$subdomain.stand.o.ui.yandex.ru/repo/browse/$user/$repo"
                 }
 
                 env == "cloud-preprod" -> {
@@ -122,16 +122,20 @@ class OpenInSourceCraftAction : AnAction() {
 
         var url = "$remoteURL/$relativePath"
 
+        // queries
+        var prefix = "?"
+
         // branch
         if (branch != null) {
-            url += "?rev=$branch"
+            url += prefix + "rev=$branch"
+            prefix = "&"
         }
 
         // lines
         url += if (startLine == endLine) {
-            "?l=$startLine"
+            prefix + "l=$startLine"
         } else {
-            "?l=$startLine-$endLine"
+            prefix + "l=$startLine-$endLine"
         }
 
         return url
