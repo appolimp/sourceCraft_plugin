@@ -1,0 +1,6 @@
+<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+    <!-- Внешний круг -->
+    <circle cx="12" cy="12" r="10" fill="#34495e"/>
+    <!-- Буква "S" в центре -->
+    <path d="M12 7 Q8 7, 8 10 Q8 13, 12 13 Q16 13, 16 16 Q16 19, 12 19" stroke="#ecf0f1" stroke-width="2" fill="none"/>
+</svg>

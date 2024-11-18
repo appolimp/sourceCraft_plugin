@@ -22,8 +22,12 @@
     </extensions>
 
     <actions>
-        <action id="OpenInSourceCraft" class="src.yandex.cloud.OpenInSourceCraftAction" text="Open in SourceCraft" description="Open selected line in SourceCraft">
-            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        <action id="OpenInSourceCraft"
+                class="src.yandex.cloud.OpenInSourceCraftAction"
+                text="Open in SourceCraft"
+                description="Open selected line in SourceCraft"
+                icon="icons/sourcecraft_icon.svg">
+            <add-to-group group-id="VersionControlsGroup" anchor="last"/>
         </action>
     </actions>
 
