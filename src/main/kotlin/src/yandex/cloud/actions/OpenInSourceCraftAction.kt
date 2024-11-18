@@ -1,4 +1,4 @@
-package src.yandex.cloud
+package src.yandex.cloud.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -7,15 +7,12 @@ import src.yandex.cloud.models.SourceCraftModel
 import java.awt.Desktop
 import java.net.URI
 
-val hostRegex = Regex("""(https?|ssh)://(.*?)\.?(git|ssh)\.(o\.(cloud(?:-preprod)?)\.yandex\.net)/(.*?)/(.*?)\.git""")
-
-
 class OpenInSourceCraftAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
-        val url = SourceCraftModel(event).getSelectedUrl() ?: return
+        val link = SourceCraftModel(event).getSelectedUrl() ?: return
 
         try {
-            Desktop.getDesktop().browse(URI(url))
+            Desktop.getDesktop().browse(URI(link))
         } catch (e: Exception) {
             Messages.showErrorDialog("Could not open SourceCraft URL", "Error")
         }

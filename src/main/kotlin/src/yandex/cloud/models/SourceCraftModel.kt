@@ -10,8 +10,9 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import git4idea.GitUtil
 import git4idea.repo.GitRepository
-import src.yandex.cloud.hostRegex
 import java.net.URLEncoder
+
+val hostRegex = Regex("""(https?|ssh)://(.*?)\.?(git|ssh)\.(o\.(cloud(?:-preprod)?)\.yandex\.net)/(.*?)/(.*?)\.git""")
 
 class SourceCraftModel(e: AnActionEvent) {
     private val project: Project? = e.getData(CommonDataKeys.PROJECT)
