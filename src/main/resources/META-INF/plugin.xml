@@ -22,21 +22,26 @@
     </extensions>
 
     <actions>
+        <group id="SourceCraftFileActions">
+            <separator/>
+            <action id="OpenInSourceCraft"
+                    class="src.yandex.cloud.actions.OpenInSourceCraftAction"
+                    text="Open in SourceCraft"
+                    description="Open selected line in SourceCraft"
+                    icon="icons/sourcecraft_icon.svg">
+            </action>
+            <action id="CopyLinkAction"
+                    class="src.yandex.cloud.actions.CopyLinkToSourceCraftAction"
+                    text="Copy SourceCraft Link"
+                    description="Copy link to clipboard"
+                    icon="icons/sourcecraft_icon.svg">
+            </action>
+            <separator/>
 
-        <action id="OpenInSourceCraft"
-                class="src.yandex.cloud.actions.OpenInSourceCraftAction"
-                text="Open in SourceCraft"
-                description="Open selected line in SourceCraft"
-                icon="icons/sourcecraft_icon.svg">
-            <add-to-group group-id="VersionControlsGroup" anchor="last"/>
-        </action>
-        <action id="CopyLinkAction"
-                class="src.yandex.cloud.actions.CopyLinkToSourceCraftAction"
-                text="Copy SourceCraft Link"
-                description="Copy link to clipboard"
-                icon="icons/sourcecraft_icon.svg">
-            <add-to-group group-id="VersionControlsGroup" anchor="last"/>
-        </action>
+<!--            <add-to-group group-id="ProjectViewPopupMenu" anchor="before" relative-to-action="ProjectViewPopupMenuRefactoringGroup"/>-->
+<!--            <add-to-group group-id="EditorTabPopupMenu" anchor="after" relative-to-action="CopyPaths"/>-->
+            <add-to-group group-id="EditorPopupMenu1" anchor="last"/>
+        </group>
     </actions>
 
 </idea-plugin>
