@@ -20,8 +20,8 @@ class SourceCraftModel(e: AnActionEvent) {
     private val file: VirtualFile? = e.getData(CommonDataKeys.VIRTUAL_FILE)
 
     fun getSelectedUrl(): String? {
-        if (project == null || editor == null || file == null) {
-            Messages.showErrorDialog("Project, editor, or file not found", "Error")
+        if (project == null || file == null) {
+            Messages.showErrorDialog("Project, or file not found", "Error")
             return null
         }
 
@@ -73,7 +73,11 @@ class SourceCraftModel(e: AnActionEvent) {
         }
     }
 
-    private fun getSelectedLines(editor: Editor): Pair<Int, Int> {
+    private fun getSelectedLines(editor: Editor?): Pair<Int?, Int?> {
+        if (editor == null) {
+            return Pair(null, null)
+        }
+
         val selectionModel = editor.selectionModel
         return if (selectionModel.hasSelection()) {
             val startLine = editor.offsetToLogicalPosition(selectionModel.selectionStart).line
@@ -81,26 +85,26 @@ class SourceCraftModel(e: AnActionEvent) {
             Pair(startLine, endLine)
         } else {
             val currentLine = editor.caretModel.logicalPosition.line
-            Pair(currentLine, currentLine)
+            Pair(currentLine, null)
         }
     }
 
     private fun getRelativePath(project: Project, file: VirtualFile): String? {
         val root = project.guessProjectDir() ?: return null
         val relativePath = VfsUtilCore.getRelativePath(file, root) ?: return null
-        return URLEncoder.encode(relativePath, "UTF-8")
+        return URLEncoder.encode(relativePath, "UTF-8").replace("%2F", "/")
     }
 
     private fun getCurrentBranch(repo: GitRepository): String? {
         val branch = repo.currentBranchName ?: return null
-        return URLEncoder.encode(branch, "UTF-8")
+        return URLEncoder.encode(branch, "UTF-8").replace("%2F", "/")
     }
 
     private fun makeUrl(
         remoteURL: String?,
         relativePath: String?,
         branch: String?,
-        startLine: Int, endLine: Int,
+        startLine: Int?, endLine: Int?,
     ): String? {
         if (remoteURL == null) {
             Messages.showErrorDialog("Empty remoteURL", "Error")
@@ -123,10 +127,12 @@ class SourceCraftModel(e: AnActionEvent) {
         }
 
         // lines
-        url += if (startLine == endLine) {
+        url += if (startLine != null && endLine != null) {
+            prefix + "l=$startLine-$endLine"
+        } else if (startLine != null){
             prefix + "l=$startLine"
         } else {
-            prefix + "l=$startLine-$endLine"
+            ""
         }
 
         return url
