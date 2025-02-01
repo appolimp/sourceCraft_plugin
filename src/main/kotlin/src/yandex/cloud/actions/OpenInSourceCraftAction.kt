@@ -9,12 +9,18 @@ import java.net.URI
 
 class OpenInSourceCraftAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
-        val link = SourceCraftModel(event).getSelectedUrl() ?: return
+        val model = SourceCraftModel(event)
 
-        try {
-            Desktop.getDesktop().browse(URI(link))
-        } catch (e: Exception) {
-            Messages.showErrorDialog("Could not open SourceCraft URL", "Error")
+        model.getSelectedUrl().thenAccept { link ->
+            if (link != null) {
+                try {
+                    Desktop.getDesktop().browse(URI(link))
+                } catch (e: Exception) {
+                    Messages.showErrorDialog("Could not open SourceCraft URL", "Error")
+                }
+            } else {
+                Messages.showErrorDialog("Failed to generate SourceCraft URL", "Error")
+            }
         }
     }
 }

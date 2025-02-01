@@ -4,13 +4,17 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
+import com.intellij.openapi.application.ReadAction
 import git4idea.GitUtil
 import git4idea.repo.GitRepository
+import git4idea.repo.GitRepositoryManager
 import java.net.URLEncoder
+import java.util.concurrent.CompletableFuture
 
 val hostRegex = Regex("""(https?|ssh)://(.*?)\.?(git|ssh)\.(o\.(cloud(?:-preprod)?)\.yandex\.net)/(.*?)/(.*?)\.git""")
 
@@ -19,24 +23,25 @@ class SourceCraftModel(e: AnActionEvent) {
     private val editor: Editor? = e.getData(CommonDataKeys.EDITOR)
     private val file: VirtualFile? = e.getData(CommonDataKeys.VIRTUAL_FILE)
 
-    fun getSelectedUrl(): String? {
+    fun getSelectedUrl(): CompletableFuture<String?> {
         if (project == null || file == null) {
-            Messages.showErrorDialog("Project, or file not found", "Error")
-            return null
+            Messages.showErrorDialog("Project or file not found", "Error")
+            return CompletableFuture.completedFuture(null)
         }
 
         val repo: GitRepository? = GitUtil.getRepositoryManager(project).getRepositoryForFileQuick(file)
         if (repo == null) {
             Messages.showErrorDialog("Repo not found", "Error")
-            return null
+            return CompletableFuture.completedFuture(null)
         }
 
         val remoteUrl = getRemoteUrl(repo)
-        val relativePath = getRelativePath(project, file)
         val branch = getCurrentBranch(repo)
         val (startLine, endLine) = getSelectedLines(editor)
 
-        return makeUrl(remoteUrl, relativePath, branch, startLine, endLine)
+        return getRelativePath(project, file).thenApply { relativePath ->
+            makeUrl(remoteUrl, relativePath, branch, startLine, endLine)
+        }
     }
 
     private fun getRemoteUrl(repo: GitRepository): String? {
@@ -52,21 +57,10 @@ class SourceCraftModel(e: AnActionEvent) {
             val (_, subdomain, _, _, env, user, repo) = match.destructured
 
             when {
-                env == "cloud" -> {
-                    "https://src.yandex.cloud/repo/browse/$user/$repo"
-                }
-
-                env == "cloud-preprod" && subdomain.isNotEmpty() -> {  // stand
-                    "https://$subdomain.stand.o.ui.yandex.ru/repo/browse/$user/$repo"
-                }
-
-                env == "cloud-preprod" -> {
-                    "https://src.yandex-preprod.cloud/repo/browse/$user/$repo"
-                }
-
-                else -> {
-                    null
-                }
+                env == "cloud" -> "https://src.yandex.cloud/$user/$repo/browse"
+                env == "cloud-preprod" && subdomain.isNotEmpty() -> "https://$subdomain.stand.o.ui.yandex.ru/$user/$repo/browse"
+                env == "cloud-preprod" -> "https://src.yandex-preprod.cloud/$user/$repo/browse"
+                else -> null
             }
         } else {
             null
@@ -74,9 +68,7 @@ class SourceCraftModel(e: AnActionEvent) {
     }
 
     private fun getSelectedLines(editor: Editor?): Pair<Int?, Int?> {
-        if (editor == null) {
-            return Pair(null, null)
-        }
+        if (editor == null) return Pair(null, null)
 
         val selectionModel = editor.selectionModel
         return if (selectionModel.hasSelection()) {
@@ -89,10 +81,10 @@ class SourceCraftModel(e: AnActionEvent) {
         }
     }
 
-    private fun getRelativePath(project: Project, file: VirtualFile): String? {
-        val root = project.guessProjectDir() ?: return null
-        val relativePath = VfsUtilCore.getRelativePath(file, root) ?: return null
-        return URLEncoder.encode(relativePath, "UTF-8").replace("%2F", "/")
+    private fun getRelativePath(project: Project, file: VirtualFile): CompletableFuture<String?> {
+        return getGitRelativePathAsync(project, file).thenApply { relativePath ->
+            relativePath?.let { URLEncoder.encode(it, "UTF-8").replace("%2F", "/") }
+        }
     }
 
     private fun getCurrentBranch(repo: GitRepository): String? {
@@ -129,12 +121,30 @@ class SourceCraftModel(e: AnActionEvent) {
         // lines
         url += if (startLine != null && endLine != null) {
             prefix + "l=$startLine-$endLine"
-        } else if (startLine != null){
+        } else if (startLine != null) {
             prefix + "l=$startLine"
         } else {
             ""
         }
 
         return url
+    }
+
+    private fun getGitRelativePathAsync(project: Project, file: VirtualFile): CompletableFuture<String?> {
+        val future = CompletableFuture<String?>()
+
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Fetching Git Path", false) {
+            override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
+                val relativePath = ReadAction.compute<String?, Throwable> {
+                    val repositoryManager = GitRepositoryManager.getInstance(project)
+                    val repository = repositoryManager.getRepositoryForFile(file) ?: return@compute null
+                    val root = repository.root
+                    VfsUtilCore.getRelativePath(file, root)
+                }
+                future.complete(relativePath)
+            }
+        })
+
+        return future
     }
 }
